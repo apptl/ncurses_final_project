@@ -18,6 +18,7 @@
 #include "asio.hpp"
 #include "chat_message.hpp"
 #include <ncurses.h>
+#include <sstream>
 
 using namespace std;
 
@@ -202,9 +203,8 @@ private:
 
 int main(int argc, char* argv[])
 {
-  try
-  {
-    if (argc < 2)
+	
+	if (argc < 2)
     {
       std::cerr << "Usage: chat_server <port> [<port> ...]\n";
       return 1;
@@ -212,6 +212,15 @@ int main(int argc, char* argv[])
 	
 	//initialize the screen
 	initscr();
+	cbreak();
+	keypad(stdscr,TRUE);
+	WINDOW* server;
+	
+	try
+	{
+	
+	server = newwin(20,50,3,1);
+	refresh();
 	
     asio::io_context io_context;
 
@@ -221,23 +230,31 @@ int main(int argc, char* argv[])
     {
       tcp::endpoint endpoint(tcp::v4(), std::atoi(argv[i]));
       servers.emplace_back(io_context, endpoint);
-	  printw("\nThis is the SERVER.\n");
-	  //don't take in an input here. might cause disturbances
-	  refresh();
+	  wprintw(server, "\nThis is the SERVER.\n");
+	  //using halfdealy() to take input
+	  //halfdelay() will only wait for X time and proceed forward
+	  //Thus the server will not lag
+	  halfdelay(100);
+	  if(wgetch(server) == KEY_F(1))
+	  {
+		wprintw(server, "Terminating Server\n\n");
+		break;
+	  }
+	  wrefresh(server);
     }
 
     io_context.run();
-	
-	//refresh the screen 
-	refresh();
-	
   }
   catch (std::exception& e)
   {
-    std::cerr << "Exception: " << e.what() << "\n";
+	std::stringstream ss;
+	ss << "Exception: " << e.what() << "\n";
+	wprintw(server, "%s\n",(ss.str()).c_str());
+	wrefresh(server);
   }
   
   //deallocate memory and end ncurses
+  delwin(server);
   endwin();
 
   return 0;

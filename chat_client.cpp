@@ -26,6 +26,33 @@ using asio::ip::tcp;
 
 typedef std::deque<chat_message> chat_message_queue;
 
+//Window Dimensions
+int height = 40;
+int width = 90;
+int room_height, room_width, room_y, room_x;
+int display_height, display_width, display_y, display_x;
+int msg_height, msg_width, msg_y, msg_x;
+
+
+void input_position(WINDOW* loacl_win, int tl, int bl, int& y)
+{
+	++y;
+	++x;
+	
+	if(y >= bl){
+		wclear(local_win);
+		y = tl + 1;
+	}
+}
+
+
+
+void get_coordiantes(WINDOW* local_win, int tl, int bl)
+{
+	
+}
+
+
 WINDOW *create_newwin(int height, int width, int starty, int startx)
 { WINDOW *local_win;
  local_win = newwin(height, width, starty, startx);
@@ -61,7 +88,7 @@ void destroy_win(WINDOW *local_win)
 bool ParseLine(const std::string& CokeMachineLine, std::vector<std::string>& params)
 	{
 		int x = 0, z = 0, i = 0;
-
+	
 		if (CokeMachineLine.length() == 0)
 		{
 			return false;
@@ -107,59 +134,59 @@ public:
   {
     asio::post(io_context_, [this]() { socket_.close(); });
   }
-
-
-
+  
+  
+  
   void login()
 	{
-
+		
 		int start_y, start_x;
 		char temp[50];
-
+		
 		//vector <WINDOW*> WB;
-
+		
 		//getmaxyx(stdscr, height, width);
-
+		
 		start_y = 1;
 		start_x = 1;
-
-
-		WINDOW* win = newwin(20,80, start_y, start_x);
+		
+		
+		WINDOW* win = newwin(20,40, start_y, start_x);
 		//WB.push_back(win);
 		refresh(); // refreshes the whole screen
-
+		
 		box(win, int('|'), int('-'));
-
-		wrefresh(win); //refreshes the window only
+		
+		wrefresh(win); //refreshes the window only  
 		echo();
-
+		
 		int proceed = 1;
 		std::string user_id, user_pw;
 		while(proceed)
 		{
 			std::string user_id, user_pw;
-
+			
 			mvwprintw(win,2,1,"ID: ");
 			wrefresh(win);
-
+			
 			wgetnstr(win,temp,50);
 			user_id = temp;
-
+			
 			wrefresh(win);
-
+			
 			mvwprintw(win,4,1,"Password: ");
 			wrefresh(win);
-
+			
 			wgetnstr(win,temp,50);
 			user_pw = temp;
 			wrefresh(win);
 
 			//vector to hold user_id and user_pw as parameters
-			std::vector<std::string> params(2);
+			std::vector<std::string> params(2); 
 			//taking input from file
 			std::ifstream inputFile{user_list_filename};
 			std::string temp;
-
+			
 			while(inputFile.good())
 			{
 				std::getline(inputFile,temp);
@@ -174,25 +201,25 @@ public:
 			}
 			//close file
 			inputFile.close();
-
+			
 			if(proceed == 0)
 			{
 				break;
-
+				
 			}else
 			{
-
+				
 				mvwprintw(win,6,1, "\nThe account mentioned above is not in our database\n");
 				wrefresh(win);
-
+				
 				char yn;
 				mvwprintw(win,8,1, "Enter 'y' if you want to try again.\n");
 				wrefresh(win);
 				mvwprintw(win,9,1, "Enter 'n' if you want to create a new account: ");
 				wrefresh(win);
-
+				
 				yn = getch();
-
+				
 				if(yn == 'y' || yn == 'Y')
 				{
 					proceed = 1;
@@ -203,32 +230,34 @@ public:
 					//if not create one
 					//just append
 					std::ofstream outfile;
-
+					
 					//open file
 					outfile.open(user_list_filename, std::ios::app);
-
+					
 					//write to file
 					//add user id and pw to file with a space in between
 					std::stringstream ss;
 					ss << user_id << ' ' << user_pw << '\n';
-
+					
 					outfile << ss.str();
 					//close file;
 					outfile.close();
-
+					
 					chat_client_user_id = user_id;
 					chat_client_pw = user_pw;
 					proceed = 0;
 				}
 			}
-
+			
 		}
 		chat_client_user_id = user_id;
 		chat_client_pw = user_pw;
 		noecho();
+		clear();
+		refresh();
 		delwin(win);
 	}
-
+	
 
 private:
 
@@ -307,13 +336,15 @@ private:
   tcp::socket socket_;
   chat_message read_msg_;
   chat_message_queue write_msgs_;
-
+  
   //private variables for login screen
   std::string chat_client_name;
   std::string chat_client_user_id;
   std::string chat_client_pw;
-
+  
 };
+
+
 /*
 class chatroom
 {
@@ -322,7 +353,7 @@ class chatroom
 		int maxUsersOnline = 5;
 		std::string chatroomName;
 		std::string admin;
-
+		
 	public:
 	void renewAdmin();
 	void addUser();
@@ -334,105 +365,124 @@ class chatroom
 	int getMaxUsers();
 	int getMaxUsersOnline();
 	std::string getChatroomName();
-
-
+		
+	
 };
-*/
 
+*/
 
 int main(int argc, char* argv[])
 {
-	initscr();
-	cbreak();
-	noecho();
-
-	WINDOW* roomBox;
-	WINDOW* displayBox;
-	WINDOW* msgBox;
-
-  try
-  {
 	//need to provide 3 arguments
     if (argc != 3)
     {
       std::cerr << "Usage: chat_client <host> <port>\n";
       return 1;
     }
-
+	
+	room_height = height - 1;
+	room_width = width / 4;
+	room_y = 3;
+	room_x = 1;
+	
+	display_height = height - height/4 -1;
+	display_width = width - width/4 -1;
+	display_y = 3;
+	display_x = width/4 - 1;
+	
+	msg_height = height/4 -1;
+	msg_width = width - width/4 -1;
+	msg_y = height - height/4 - 1;
+	msg_x = width/4 - 1;
+	
+	
+	initscr();
+	cbreak();
+	
+	WINDOW* roomBox;
+	WINDOW* displayBox;
+	WINDOW* msgBox;
 	//initialize the screen
-
-	//y-> no. of rows
-	//x-> no. of columns
-	int height, width;
-	height = 44;
-	width = 85;
+	
 	//getmaxyx(stdscr,height,width);
-
-
+	
+	try
+	{
     asio::io_context io_context;
 
     tcp::resolver resolver(io_context);
     auto endpoints = resolver.resolve(argv[1], argv[2]);
     chat_client c(io_context, endpoints);
 
-	c.login(); // enter login procedure
-
-
-	roomBox = create_newwin(height-1, width/4, 1,1);
-	displayBox = create_newwin(height - height/4 -1, width - width/4 -1, 1, width/4 +1);
-	msgBox = create_newwin(height/4-1, width - width/4 -1, height - height/4 +1, width/4 +1);
+	c.login(); // enter login procedure	
+	
+	
+	roomBox = create_newwin(room_height, room_width, room_y, room_x);
+	displayBox = create_newwin(display_height, display_width, display_y, display_x);
+	msgBox = create_newwin(msg_height, msg_width, msg_y, msg_x);
 	refresh();
-
-
-	box(roomBox, int('|'), int('-'));
+	
+	
+	box(roomBox, 0,0);
 	wrefresh(roomBox);
-
-	box(msgBox,int('|'), int('n'));
+	
+	box(displayBox,0,0);
+	wrefresh(displayBox);
+	
+	box(msgBox,0,0);
 	wrefresh(msgBox);
 
-	box(displayBox,int('|'), int('c'));
-	wrefresh(displayBox);
-
-
-	endwin();
     std::thread t([&io_context](){ io_context.run(); });
-
-
-
+	
+	
+	
     char line[chat_message::max_body_length + 1];
-	echo();
+	
     while (1)
     {
+		int y,x;
+		getyx(msgBox,y,x);
+		wmove(msgBox,y,x);
+		wrefresh(msgBox);
+		
+		echo();
 		wgetnstr(msgBox,line, chat_message::max_body_length + 1);
-	  wrefresh(msgBox);
-      chat_message msg;
-      msg.body_length(std::strlen(line));
-      std::memcpy(msg.body(), line, msg.body_length());
-      msg.encode_header();
-      c.write(msg);
+		wrefresh(msgBox);
+		noecho();
+		
+		getyx(displayBox,y,x);
+		wmove(displayBox,y,x);
+		wrefresh(displayBox);
+		
+		chat_message msg;
+		msg.body_length(std::strlen(line));
+		std::memcpy(msg.body(), line, msg.body_length());
+		msg.encode_header();
+		
+		c.write(msg);
+		
+		//refreshing all them boxes.
+		wrefresh(msgBox);
+		wrefresh(displayBox);
+		wrefresh(roomBox);
     }
-	noecho();
-
+	
     c.close(); //close chat_client
     t.join(); //join thread
-	getch();
-	destroy_win(displayBox);
-	destroy_win(msgBox);
-	destroy_win(roomBox);
   }
+  
   catch (std::exception& e)
   {
 	std::stringstream ess;
     ess << "Exception: " << e.what() << "\n";
-	wprintw(msgBox, (ess.str()).c_str());
-	wrefresh(msgBox);
-
+	wprintw(roomBox, (ess.str()).c_str());
+	wrefresh(roomBox);
+  }
+	
 	destroy_win(displayBox);
 	destroy_win(msgBox);
 	destroy_win(roomBox);
-  }
-
 	endwin();
-
+	
   return 0;
 }
