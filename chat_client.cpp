@@ -20,6 +20,10 @@
 #include <fstream>
 #include <sstream>
 
+WINDOW* roomBox;
+WINDOW* displayBox;
+WINDOW* msgBox;
+
 std::string user_list_filename = "user_list_file.txt";
 
 using asio::ip::tcp;
@@ -27,6 +31,7 @@ using asio::ip::tcp;
 typedef std::deque<chat_message> chat_message_queue;
 
 //Window Dimensions
+int y,x;
 int height = 40;
 int width = 90;
 int room_height, room_width, room_y, room_x;
@@ -34,10 +39,10 @@ int display_height, display_width, display_y, display_x;
 int msg_height, msg_width, msg_y, msg_x;
 
 
-void input_position(WINDOW* loacl_win, int tl, int bl, int& y)
+void input_position(WINDOW* local_win, int tl, int bl, int& y, int& x)
 {
+	x = 3;
 	++y;
-	++x;
 	
 	if(y >= bl){
 		wclear(local_win);
@@ -46,12 +51,16 @@ void input_position(WINDOW* loacl_win, int tl, int bl, int& y)
 }
 
 
-
-void get_coordiantes(WINDOW* local_win, int tl, int bl)
+/*
+void get_coordiantes(WINDOW* local_win, int height, int& tl, int& bl)
 {
+	int y,x;
+	getyx(local_win,y,x);
 	
+	tl = y;
+	bl = y + height -2;
 }
-
+*/
 
 WINDOW *create_newwin(int height, int width, int starty, int startx)
 { WINDOW *local_win;
@@ -298,9 +307,27 @@ private:
         {
           if (!ec)
           {
-            std::cout.write(read_msg_.body(), read_msg_.body_length());
-            std::cout << "\n";
-            do_read_header();
+			input_position(displayBox, display_y, display_y + display_height -2, y, x);
+		
+			//wmove(msgBox,y,x);
+			//wrefresh(msgBox);
+			
+			//char *outline = (char*) malloc(read_msg_.body_length() + 1);
+            //memset(outline,'\0',read_msg_.body_length() + 1);
+            //memcpy(outline,read_msg_.body(),read_msg_.body_length());
+			
+			mvwprintw(displayBox,y+1,x,read_msg_.body());
+			wrefresh(displayBox);
+			
+			//std::cout.write(read_msg_.body(), read_msg_.body_length());
+            //std::cout << "\n";
+			
+			//input_position(displayBox, display_y, display_y + display_height -2, y, x);
+		
+			//wmove(displayBox,y,x);
+			//wrefresh(displayBox);
+		
+			do_read_header();
           }
           else
           {
@@ -345,7 +372,6 @@ private:
 };
 
 
-/*
 class chatroom
 {
 	private:
@@ -365,11 +391,13 @@ class chatroom
 	int getMaxUsers();
 	int getMaxUsersOnline();
 	std::string getChatroomName();
-		
 	
 };
 
-*/
+void parseInput(std::string inputStr)
+{
+	
+}
 
 int main(int argc, char* argv[])
 {
@@ -380,28 +408,26 @@ int main(int argc, char* argv[])
       return 1;
     }
 	
-	room_height = height - 1;
+	room_height = height - 4;
 	room_width = width / 4;
 	room_y = 3;
 	room_x = 1;
 	
-	display_height = height - height/4 -1;
-	display_width = width - width/4 -1;
+	display_height = height - height/4 -5;
+	display_width = width - width/4 -5;
 	display_y = 3;
-	display_x = width/4 - 1;
+	display_x = width/4 + 5;
 	
-	msg_height = height/4 -1;
-	msg_width = width - width/4 -1;
-	msg_y = height - height/4 - 1;
-	msg_x = width/4 - 1;
+	msg_height = height/4 -5;
+	msg_width = width - width/4 -5;
+	msg_y = height - height/4 - 5;
+	msg_x = width/4 + 5;
 	
 	
 	initscr();
 	cbreak();
 	
-	WINDOW* roomBox;
-	WINDOW* displayBox;
-	WINDOW* msgBox;
+	
 	//initialize the screen
 	
 	//getmaxyx(stdscr,height,width);
@@ -439,20 +465,25 @@ int main(int argc, char* argv[])
     char line[chat_message::max_body_length + 1];
 	
     while (1)
-    {
-		int y,x;
-		getyx(msgBox,y,x);
-		wmove(msgBox,y,x);
+    {	
+		/*
+		mvwprintw(roomBox,1,1,"roomBox");
+		wrefresh(roomBox);
+		mvwprintw(msgBox,1,1,"msgBox");
 		wrefresh(msgBox);
+		mvwprintw(displayBox,1,1,"displayBox");
+		wrefresh(displayBox);
 		
+		*/
+		//take input here
 		echo();
+		wmove(msgBox,2,3);
+		wrefresh(msgBox);
 		wgetnstr(msgBox,line, chat_message::max_body_length + 1);
 		wrefresh(msgBox);
-		noecho();
 		
-		getyx(displayBox,y,x);
-		wmove(displayBox,y,x);
-		wrefresh(displayBox);
+		wclear(msgBox);
+		wrefresh(msgBox);
 		
 		chat_message msg;
 		msg.body_length(std::strlen(line));
