@@ -36,6 +36,7 @@ std::string menu_choice;
 
 std::string user_name_use ;
 std::string user_name_chat;
+std::vector<std::string> names2;
 
 
 using asio::ip::tcp;
@@ -232,7 +233,7 @@ public:
 		inputFile.close();
 		inputFile.open(user_name_use, std::ios::in);
 
-		std::vector<std::string> names2;
+
 		while(inputFile.good())
 		{
 		  std::getline(inputFile,temp);
@@ -621,6 +622,8 @@ int main(int argc, char* argv[])
 
 	box(roomBox, 0,0);
 	mvwprintw(roomBox,1,1, menu_choice.c_str());
+
+
 	wrefresh(roomBox);
 
 	box(displayBox,0,0);
@@ -659,14 +662,26 @@ int main(int argc, char* argv[])
 
 		chat_message msg;
 		std::string user;
-		user = user_name_chat + ":";
+
+    // ctime() used to give the present time
+
+
+		user = user_name_chat + ": ";
 		//char new_use[chat_message::max_body_length + 1 + std::strlen(user.c_str())];
 
-			std::string new_use = user+ line;
+		char s[1000];
+
+		time_t t = time(NULL);
+		struct tm * p = localtime(&t);
+
+		strftime(s, 1000, "{%D,%r} ", p);
+
+
+
+			std::string new_use = s  + user+ line;
 
 		msg.body_length((std::strlen(new_use.c_str())));
-		//line.std::insert(0,user);
-		//std::strcat(line,user_name_use.c_str());
+
 		std::memcpy(msg.body(), new_use.c_str(), msg.body_length());
 		msg.encode_header();
 
