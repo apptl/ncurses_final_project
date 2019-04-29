@@ -606,13 +606,12 @@ int main(int argc, char* argv[])
     asio::io_context io_context;
 
     tcp::resolver resolver(io_context);
-    auto endpoints = resolver.resolve(argv[1], argv[2]);
+     auto endpoints = resolver.resolve(argv[1], argv[2]);
     chat_client c(io_context, endpoints);
 
 	c.login(); // enter login procedure
 
 	c.menu();
-
 
 	roomBox = create_newwin(room_height, room_width, room_y, room_x);
 	displayBox = create_newwin(display_height, display_width, display_y, display_x);
