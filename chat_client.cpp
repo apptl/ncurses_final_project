@@ -264,7 +264,7 @@ public:
 
 		while(1)
 		{
-			for(int i =0;i<names2.size();i++)
+			for(int i =0;i < (int)names2.size();i++)
 			{
 				if(i == highlight)
 				{
@@ -284,8 +284,8 @@ public:
 					break;
 				case KEY_DOWN:
 					highlight++;
-					if(highlight == names2.size()-1)
-						highlight = names2.size()-2;
+					if(highlight == (int)names2.size()-1)
+						highlight = (int)names2.size()-2;
 					break;
 				default:
 					break;
