@@ -18,10 +18,12 @@
 #include <ncurses.h>
 #include <menu.h>
 #include <cstdio>
-
 #include <string>
 #include <fstream>
 #include <sstream>
+#include <map>
+#include <cctype>
+
 
 WINDOW* roomBox;
 WINDOW* displayBox;
@@ -29,10 +31,14 @@ WINDOW* msgBox;
 
 
 
+using namespace std;
+
+
 std::string user_list_filename = "user_list_file.txt";
 std::string user_chat = "chatnames.txt";
 
 std::string menu_choice;
+int menu_port;
 
 std::string user_name_use ;
 std::string user_name_chat;
@@ -43,6 +49,15 @@ using asio::ip::tcp;
 
 typedef std::deque<chat_message> chat_message_queue;
 
+struct ports_use
+{
+public:
+std::string groupName;
+int port_number;
+};
+
+
+std::vector <ports_use> ports;
 //Window Dimensions
 int y,x;
 int height = 40;
@@ -159,7 +174,7 @@ public:
 
 	void menu()
 	{
-
+		clear();
 		int start_y, start_x;
 		//char temp[50];
 
@@ -167,11 +182,11 @@ public:
 
 		//getmaxyx(stdscr, height, width);
 
-		char temp2[50];
+		//char temp2[50];
 
 		start_y = 1;
 		start_x = 1;
-
+		/*
 		WINDOW* win = newwin(20,40, start_y, start_x);
 		//WB.push_back(win);
 		refresh(); // refreshes the whole screen
@@ -182,76 +197,12 @@ public:
 
 
 		int count = 0;
-		std::string chat_name;
 
-		std::vector<std::string> names;
-		//taking input from file
-		std::fstream inputFile;
-		user_name_use = user_name_use +".txt";
-		inputFile.open(user_name_use, std::ios::in);
-		std::string temp;
-
-		if(!inputFile.is_open())
-		{
-			mvwprintw(win,6,1,"You got played LOL ");
-			inputFile.open(user_name_use, std::ios::app);
-		}
-
-
-		//inputFile.open(user_name_use, std::ios::in);
-
-		while(inputFile.good())
-		{
-
-		  std::getline(inputFile,temp);
-			names.push_back(temp);
-			//mvwprintw(win,use,1,temp.c_str());
-			count++;
-		//	mvwprintw(win,6,1,std::to_string(count).c_str());
-			wrefresh(win);
-
-		}
-		std::stringstream ss;
-		if(count == 1)
-		{
-			inputFile.close();
-			inputFile.open(user_name_use, std::ios::out);
-			mvwprintw(win,2,1,"You have no chat rooms");
-			wrefresh(win);
-			mvwprintw(win,3,1,"Enter chat name: ");
-			wrefresh(win);
-			wgetnstr(win,temp2,50);
-			chat_name = temp;
-			ss<<temp2;
-			inputFile<<ss.str();
-			wrefresh(win);
-			//clear();
-			refresh();
-		}
-		count = 0;
-
-		inputFile.close();
-		inputFile.open(user_name_use, std::ios::in);
-
-
-		while(inputFile.good())
-		{
-		  std::getline(inputFile,temp);
-			names2.push_back(temp);
-			mvwprintw(win,3,1,std::to_string(count).c_str());
-			//mvwprintw(win,use,1,temp.c_str());
-			count++;
-
-			wrefresh(win);
-		}
-
-
-		inputFile.close();
-		//std::string choices[3] = {"CSE3320" , "CSE3310" , "CSE2441"};
 		noecho();
 		clear();
 		refresh();
 		delwin(win);
+			*/
 		WINDOW* win2 = newwin(20,40, start_y, start_x);
 		//WB.push_back(win);
 		refresh();
@@ -259,20 +210,19 @@ public:
 		refresh();
 		wrefresh(win2); //refreshes the window only
 		keypad(win2,true);
-		int choice;
+		int choice=0;
 		int highlight = 0;
 
 		while(1)
 		{
-			for(int i =0;i < (int)names2.size();i++)
+			for(int i =0;i < ports.size()-1;i++)
 			{
 				if(i == highlight)
-				{
 					wattron(win2,A_REVERSE);
-				}
-				mvwprintw(win2, i+1, 1, names2[i].c_str());
+				mvwprintw(win2, i+1, 1, ports[i].groupName.c_str());
 				wattroff(win2,A_REVERSE);
 			}
+
 			choice = wgetch(win2);
 
 			switch(choice)
@@ -284,23 +234,22 @@ public:
 					break;
 				case KEY_DOWN:
 					highlight++;
-					if(highlight == (int)names2.size()-1)
-						highlight = (int)names2.size()-2;
+					if(highlight == (int)ports.size()-1)
+						highlight = (int)ports.size()-2;
 					break;
 				default:
 					break;
 
 			}
+
 			if(choice ==10)
 			{
 				break;
 			}
 
 		}
-		menu_choice = names2[highlight];
-
-
-
+		menu_choice = ports[highlight].groupName;
+		menu_port = ports[highlight].port_number;
 
 		noecho();
 		clear();
@@ -308,6 +257,140 @@ public:
 		delwin(win2);
 
 	}
+
+
+	class SpellCheck {
+	    public:
+	        SpellCheck(string filename) {
+	            ifstream in(filename.c_str());
+	            string temp;
+	            while (in) {
+	                getline(in, temp);
+	                string word;
+	                while (temp.length() > 0) {
+	                    if (nextWord(temp, word)) {
+	                        map<string, int>::iterator itr = nWords.find(word);
+	                        if (itr == nWords.end()) {
+	                            nWords.insert(pair<string, int>(word, 1));
+	                        } else {
+	                            (*itr).second++;
+	                        }
+	                    }
+	                }
+	            }
+	            in.close();
+	        }
+
+	        string correct(string word) {
+	            if (nWords.find(word) != nWords.end()) return word;
+	            vector<string> edit1 = edits(word);
+	            map<int, string> candidates;
+	            for (int i = 0; i < edit1.size(); i++) {
+	                map<string, int>::iterator itr = nWords.find(edit1[i]);
+	                if (itr != nWords.end()) {
+	                    pair<string, int> myPair = *itr;
+	                    candidates.insert(pair<int, string>(myPair.second, myPair.first));
+	                }
+	            }
+	            if (candidates.size() > 0) {
+	                map<int, string>::iterator itr = candidates.begin();
+	                pair<int, string> max = *itr;
+	                itr++;
+	                while (itr != candidates.end())
+	                    if ((*itr).first > max.first) max = *itr;
+	                return max.second;
+	            }
+	            candidates.clear();
+	            for (int i = 0; i < edit1.size(); i++) {
+	                vector<string> edit2 = edits(edit1[i]);
+	                for (int i = 0; i < edit2.size(); i++) {
+	                    map<string, int>::iterator itr = nWords.find(edit2[i]);
+	                    if (itr != nWords.end()) {
+	                        pair<string, int> myPair = *itr;
+	                        candidates.insert(pair<int, string>(myPair.second, myPair.first));
+	                    }
+	                }
+	            }
+	            if (candidates.size() > 0) {
+	                map<int, string>::iterator itr = candidates.begin();
+	                pair<int, string> max = *itr;
+	                itr++;
+	                while (itr != candidates.end())
+	                    if ((*itr).first > max.first) max = *itr;
+	                return max.second;
+	            }
+	            return word;
+	        }
+
+	    private:
+	        vector<string> edits(string word) {
+	            vector<string> result;
+	            string temp;
+	            for (int i = 0; i < word.length(); i++) {
+	                temp = word.substr(0, i) + word.substr(i+1);
+	                result.push_back(temp);
+	            }
+	            for (int i = 0; i < word.length() - 1; i++) {
+	                temp = word.substr(0, i) + word[i+1] + word[i] + word.substr(i+2);
+	                result.push_back(temp);
+	            }
+	            for (int i = 0; i < word.length(); i++) {
+	                for (char c = 'a'; c <= 'z'; c++) {
+	                    temp = word.substr(0, i) + c + word.substr(i+1);
+	                    result.push_back(temp);
+	                }
+	            }
+	            for (int i = 0; i < word.length() + 1; i++) {
+	                for (char c = 'a'; c <= 'z'; c++) {
+	                    temp = word.substr(0, i) + c + word.substr(i);
+	                    result.push_back(temp);
+	                }
+	            }
+	            return result;
+	        }
+
+	        bool nextWord(string& sentence, string& word) {
+	            while (true) {
+	                int pos = sentence.find(" ");
+
+	                if (pos != string::npos) {
+	                    word = sentence.substr(0, pos);
+
+	                    sentence = sentence.substr(pos);
+	                    while (sentence.length() > 0 && !isalpha(sentence[0])) {
+	                        sentence = sentence.substr(1);
+	                    }
+	                    bool isWord = true;
+	                    for (int i = 0; i < word.length(); i++) {
+	                        if (isalpha(word[i])) {
+	                            word[i] = tolower(word[i]);
+	                        } else if (ispunct(word[i])) {
+	                            word = word.substr(0, i) + word.substr(i+1);
+	                        } else isWord = false;
+	                    }
+	                    if (!isWord) {
+	                        continue;
+	                    }
+	                    return true;
+	                } else {
+	                    word = sentence;
+	                    sentence = "";
+	                    bool isWord = true;
+	                    for (int i = 0; i < word.length(); i++) {
+	                        if (isalpha(word[i])) word[i] = tolower(word[i]);
+	                        else isWord = false;
+	                    }
+	                    if (!isWord) {
+	                        return false;
+	                    }
+	                    return true;
+	                }
+	            }
+	        }
+
+	        map<string, int> nWords;
+	};
+
 
 
   void login()
@@ -566,6 +649,142 @@ void parseInput(std::string inputStr)
 
 }
 
+void switching(char *argv[])
+{
+	initscr();
+	cbreak();
+	asio::io_context io_context;
+	tcp::resolver resolver(io_context);
+	auto endpoints = resolver.resolve(argv[1], argv[2]);//std::to_string(ports_use[0].port_number));
+	//std::cout<<menu_port;
+	chat_client temp(io_context, endpoints);
+	temp.menu();
+
+	try
+	{
+		asio::io_context io_context;
+
+		tcp::resolver resolver(io_context);
+		auto endpoints = resolver.resolve(argv[1], std::to_string(menu_port));//std::to_string(ports_use[0].port_number));
+		//std::cout<<menu_port;
+		chat_client c(io_context, endpoints);
+
+		//c.menu();
+
+		roomBox = create_newwin(room_height, room_width, room_y, room_x);
+		displayBox = create_newwin(display_height, display_width, display_y, display_x);
+		msgBox = create_newwin(msg_height, msg_width, msg_y, msg_x);
+		refresh();
+
+		box(roomBox, 0,0);
+		mvwprintw(roomBox,1,1, menu_choice.c_str());
+
+		wrefresh(roomBox);
+
+		box(displayBox,0,0);
+		wrefresh(displayBox);
+
+		box(msgBox,0,0);
+		wrefresh(msgBox);
+
+			std::thread t([&io_context](){ io_context.run(); });
+
+			char line[chat_message::max_body_length + 1];
+
+			while (1)
+			{
+			echo();
+			string filename = "engmix.txt";
+			chat_client::SpellCheck checker(filename);
+
+			wmove(msgBox,2,3);
+			wrefresh(msgBox);
+			wgetnstr(msgBox,line, chat_message::max_body_length + 1);
+			wrefresh(msgBox);
+
+			wclear(msgBox);
+			wrefresh(msgBox);
+
+			std::string compare_string = line;
+
+			if(compare_string.compare("switch") == 0 )
+			{
+
+				switching(argv);
+				//return 1;
+			}
+
+			if(compare_string.compare("exit") == 0 )
+			{
+				break;
+			}
+
+
+			std::string buf;                 // Have a buffer string
+			std::stringstream ss(line);       // Insert the string into a stream
+
+			std::vector<std::string> tokens; // Create vector to hold our words
+
+			while (ss >> buf)
+					tokens.push_back(buf);
+
+			int i ;
+
+
+			string line2;
+
+			for(i=0;i<tokens.size();i++)
+			{
+
+				line2 = line2 + " " + checker.correct(tokens[i]);
+			}
+
+
+			chat_message msg;
+			std::string user;
+
+			// ctime() used to give the present time
+
+			user = user_name_chat + ": ";
+			//char new_use[chat_message::max_body_length + 1 + std::strlen(user.c_str())];
+
+			char s[1000];
+
+			time_t t = time(NULL);
+			struct tm * p = localtime(&t);
+
+			strftime(s, 1000, "{%D,%r} ", p);
+
+			std::string new_use = s  + user+ line2;
+
+			msg.body_length((std::strlen(new_use.c_str())));
+
+			std::memcpy(msg.body(), new_use.c_str(), msg.body_length());
+			msg.encode_header();
+
+			c.write(msg);
+
+			//refreshing all them boxes.
+			wrefresh(msgBox);
+			wrefresh(displayBox);
+			wrefresh(roomBox);
+		}
+
+			t.join(); //join thread
+		}
+		catch (std::exception& e)
+		{
+		std::stringstream ess;
+			ess << "Exception: " << e.what() << "\n";
+		wprintw(roomBox, (ess.str()).c_str());
+		wrefresh(roomBox);
+		}
+
+
+}
+
+
+
 int main(int argc, char* argv[])
 {
 	//need to provide 3 arguments
@@ -574,141 +793,212 @@ int main(int argc, char* argv[])
       std::cerr << "Usage: chat_client <host> <port>\n";
       return 1;
     }
+		room_height = height - 4;
+		room_width = width / 4;
+		room_y = 3;
+		room_x = 1;
+
+		display_height = height - height/4 -5;
+		display_width = width - width/4 -5;
+		display_y = 3;
+		display_x = width/4 + 5;
+
+		msg_height = height/4 -5;
+		msg_width = width - width/4 -5;
+		msg_y = height - height/4 - 5;
+		msg_x = width/4 + 5;
+
+		std::fstream myfile;
+
+		myfile.open("-.superchat", std::fstream::in);
+		std::string temp_file_string;
+
+		std::string buffer2;                 // Have a buffer string
+		       // Insert the string into a stream
+
+		std::vector<std::string> tokens2; // Create vector to hold our words
+
+		string array[2];
+		//int index=0;
+		std::fstream file_debug;
+		std::string delimiter = "->";
+		std::string delimiter2 = " ";
+		std::string token;
+		ports_use temp;
+
+		while(!myfile.eof())
+		{
+			myfile >> temp_file_string;
+			token = temp_file_string.substr(0, temp_file_string.find(delimiter));
+			//file_debug <<token <<"\n";
+			temp.port_number = std::atoi(token.c_str());
+			token = temp_file_string.substr(6, temp_file_string.find(delimiter2));
+			temp.groupName = token;
+			//file_debug <<token <<"\n";
+
+			ports.push_back(temp);
+
+		}
+
+		std::fstream newfile;
+		newfile.open("new.txt", std::ios::out);
+
+		for(int i =0;i<ports.size();i++)
+		{
+			newfile << ports[i].port_number << " " << ports[i].groupName << "\n";
+		}
 
 
 
-	room_height = height - 4;
-	room_width = width / 4;
-	room_y = 3;
-	room_x = 1;
-
-	display_height = height - height/4 -5;
-	display_width = width - width/4 -5;
-	display_y = 3;
-	display_x = width/4 + 5;
-
-	msg_height = height/4 -5;
-	msg_width = width - width/4 -5;
-	msg_y = height - height/4 - 5;
-	msg_x = width/4 + 5;
+		myfile.close();
+		newfile.close();
 
 
-	initscr();
-	cbreak();
+
+		initscr();
+		cbreak();
+
+
+		//initialize the screen
+
+		//getmaxyx(stdscr,height,width);
+
+		try
+		{
+			asio::io_context io_context;
+
+			tcp::resolver resolver(io_context);
+			 auto endpoints = resolver.resolve(argv[1], argv[2]);
+
+			chat_client c(io_context, endpoints);
+
+			c.login(); // enter login procedure
+
+
+		roomBox = create_newwin(room_height, room_width, room_y, room_x);
+		displayBox = create_newwin(display_height, display_width, display_y, display_x);
+		msgBox = create_newwin(msg_height, msg_width, msg_y, msg_x);
+		refresh();
+
+
+		box(roomBox, 0,0);
+		mvwprintw(roomBox,1,1, "Lobby");
+
+
+		wrefresh(roomBox);
+
+		box(displayBox,0,0);
+		wrefresh(displayBox);
+
+		box(msgBox,0,0);
+		wrefresh(msgBox);
+
+			std::thread t([&io_context](){ io_context.run(); });
+
+			char line[chat_message::max_body_length + 1];
+
+			while (1)
+			{
+			echo();
+			string filename = "engmix.txt";
+			chat_client::SpellCheck checker(filename);
+
+			wmove(msgBox,2,3);
+			wrefresh(msgBox);
+			wgetnstr(msgBox,line, chat_message::max_body_length + 1);
+			wrefresh(msgBox);
+
+			wclear(msgBox);
+			wrefresh(msgBox);
+
+			std::string compare_string = line;
+
+			if(compare_string.compare("switch") == 0 )
+			{
+
+
+						switching(argv);
+						//c.close();
+
+						return 0;
+			}
+
+			std::string buf;                 // Have a buffer string
+			std::stringstream ss(line);       // Insert the string into a stream
+
+			std::vector<std::string> tokens; // Create vector to hold our words
+
+			while (ss >> buf)
+					tokens.push_back(buf);
+
+			int i ;
+
+
+			string line2;
+
+			for(i=0;i<tokens.size();i++)
+			{
+
+				line2 = line2 + " " + checker.correct(tokens[i]);
+			}
+
+
+			chat_message msg;
+			std::string user;
+
+			// ctime() used to give the present time
+
+			user = user_name_chat + ": ";
+			//char new_use[chat_message::max_body_length + 1 + std::strlen(user.c_str())];
+
+			char s[1000];
+
+			time_t t = time(NULL);
+			struct tm * p = localtime(&t);
+
+			strftime(s, 1000, "{%D,%r} ", p);
+
+			std::string new_use = s  + user+ line2;
+
+			msg.body_length((std::strlen(new_use.c_str())));
+
+			std::memcpy(msg.body(), new_use.c_str(), msg.body_length());
+			msg.encode_header();
+
+			c.write(msg);
+
+			//refreshing all them boxes.
+			wrefresh(msgBox);
+			wrefresh(displayBox);
+			wrefresh(roomBox);
+			}
+
+			c.close(); //close chat_client
+			t.join(); //join thread
+		}
+
+		catch (std::exception& e)
+		{
+		std::stringstream ess;
+			ess << "Exception: " << e.what() << "\n";
+		wprintw(roomBox, (ess.str()).c_str());
+		wrefresh(roomBox);
+		}
+
+		destroy_win(displayBox);
+		destroy_win(msgBox);
+		destroy_win(roomBox);
+		endwin();
+
+		return 0;
+
 
 
 	//initialize the screen
 
 	//getmaxyx(stdscr,height,width);
 
-	try
-	{
-    asio::io_context io_context;
 
-    tcp::resolver resolver(io_context);
-     auto endpoints = resolver.resolve(argv[1], argv[2]);
-    chat_client c(io_context, endpoints);
-
-	c.login(); // enter login procedure
-
-	c.menu();
-
-	roomBox = create_newwin(room_height, room_width, room_y, room_x);
-	displayBox = create_newwin(display_height, display_width, display_y, display_x);
-	msgBox = create_newwin(msg_height, msg_width, msg_y, msg_x);
-	refresh();
-
-
-	box(roomBox, 0,0);
-	mvwprintw(roomBox,1,1, menu_choice.c_str());
-
-
-	wrefresh(roomBox);
-
-	box(displayBox,0,0);
-	wrefresh(displayBox);
-
-	box(msgBox,0,0);
-	wrefresh(msgBox);
-
-    std::thread t([&io_context](){ io_context.run(); });
-
-
-
-    char line[chat_message::max_body_length + 1];
-
-
-    while (1)
-    {
-		/*
-		mvwprintw(roomBox,1,1,"roomBox");
-		wrefresh(roomBox);
-		mvwprintw(msgBox,1,1,"msgBox");
-		wrefresh(msgBox);
-		mvwprintw(displayBox,1,1,"displayBox");
-		wrefresh(displayBox);
-
-		*/
-		//take input here
-		echo();
-		wmove(msgBox,2,3);
-		wrefresh(msgBox);
-		wgetnstr(msgBox,line, chat_message::max_body_length + 1);
-		wrefresh(msgBox);
-
-		wclear(msgBox);
-		wrefresh(msgBox);
-
-		chat_message msg;
-		std::string user;
-
-    // ctime() used to give the present time
-
-
-		user = user_name_chat + ": ";
-		//char new_use[chat_message::max_body_length + 1 + std::strlen(user.c_str())];
-
-		char s[1000];
-
-		time_t t = time(NULL);
-		struct tm * p = localtime(&t);
-
-		strftime(s, 1000, "{%D,%r} ", p);
-
-
-
-			std::string new_use = s  + user+ line;
-
-		msg.body_length((std::strlen(new_use.c_str())));
-
-		std::memcpy(msg.body(), new_use.c_str(), msg.body_length());
-		msg.encode_header();
-
-		c.write(msg);
-
-
-		//refreshing all them boxes.
-		wrefresh(msgBox);
-		wrefresh(displayBox);
-		wrefresh(roomBox);
-    }
-
-    c.close(); //close chat_client
-    t.join(); //join thread
-  }
-
-  catch (std::exception& e)
-  {
-	std::stringstream ess;
-    ess << "Exception: " << e.what() << "\n";
-	wprintw(roomBox, (ess.str()).c_str());
-	wrefresh(roomBox);
-  }
-
-	destroy_win(displayBox);
-	destroy_win(msgBox);
-	destroy_win(roomBox);
-	endwin();
 
   return 0;
 }

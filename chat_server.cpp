@@ -18,7 +18,7 @@
 #include "asio.hpp"
 #include "chat_message.hpp"
 #include <ncurses.h>
-#include <sstream>
+#include "fstream"
 
 using namespace std;
 
@@ -203,58 +203,93 @@ private:
 
 int main(int argc, char* argv[])
 {
-	
-	if (argc < 2)
+  try
+  {
+    if (argc < 2)
     {
       std::cerr << "Usage: chat_server <port> [<port> ...]\n";
       return 1;
     }
-	
+
 	//initialize the screen
 	initscr();
-	cbreak();
-	keypad(stdscr,TRUE);
-	WINDOW* server;
-	
-	try
-	{
-	
-	server = newwin(20,50,3,1);
-	refresh();
-	
+
     asio::io_context io_context;
 
+    //asio::io_context io_context2;
+
+    //std::string port = "9001";
+
+
     std::list<chat_server> servers;
-	
-    for (int i = 1; i < argc; ++i)
+    //char * newchar = "9001";
+    //argv[3] = newchar;
+    //argc++;
+
+
+
+    std::fstream myfile2;
+    std::string temp;
+    std::vector <std::string> groups;
+
+    myfile2.open("groupnames.txt", std::fstream::in);
+    while(!myfile2.eof())
     {
-      tcp::endpoint endpoint(tcp::v4(), std::atoi(argv[i]));
+      myfile2 >> temp;
+      groups.push_back(temp);
+
+    }
+
+    myfile2.close();
+
+    std::fstream myfile;
+
+    myfile.open("-.superchat", std::fstream::out);
+
+
+    std::vector <int> ports;
+    int first_port = std::atoi(argv[1]);
+    ports.push_back(first_port);
+
+
+    for(int i=1;i<11;i++)
+    {
+      if(i==5)
+      {
+        first_port++;
+      }
+      first_port ++;
+      ports.push_back(first_port);
+      myfile <<first_port<< "->"<<groups[i]<<"\n";
+    }
+
+
+    myfile.close();
+
+    for (int i = 0; i < ports.size(); ++i)
+    {
+      tcp::endpoint endpoint(tcp::v4(), ports[i]);
       servers.emplace_back(io_context, endpoint);
-	  wprintw(server, "\nThis is the SERVER.\n");
-	  //using halfdealy() to take input
-	  //halfdelay() will only wait for X time and proceed forward
-	  //Thus the server will not lag
-	  halfdelay(100);
-	  if(wgetch(server) == KEY_F(1))
-	  {
-		wprintw(server, "Terminating Server\n\n");
-		break;
-	  }
-	  wrefresh(server);
+	  printw("\nThis is the SERVER.\n");
+    std::string use_port_string = std::to_string(ports[i]);
+    printw(use_port_string.c_str());
+	  //don't take in an input here. might cause disturbances
+	  refresh();
     }
 
     io_context.run();
+
+	//refresh the screen
+	refresh();
+
   }
+
   catch (std::exception& e)
   {
-	std::stringstream ss;
-	ss << "Exception: " << e.what() << "\n";
-	wprintw(server, "%s\n",(ss.str()).c_str());
-	wrefresh(server);
+    std::cerr << "Exception: " << e.what() << "\n";
   }
-  
+
   //deallocate memory and end ncurses
-  delwin(server);
   endwin();
 
   return 0;
