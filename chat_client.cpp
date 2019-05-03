@@ -217,7 +217,7 @@ public:
 
 		while(1)
 		{
-			for(int i =0;i < ports.size()-1;i++)
+			for(int i =0;i < (int)ports.size()-1;i++)
 			{
 				if(i == highlight)
 					wattron(win2,A_REVERSE);
@@ -287,7 +287,7 @@ public:
 	            if (nWords.find(word) != nWords.end()) return word;
 	            vector<string> edit1 = edits(word);
 	            map<int, string> candidates;
-	            for (int i = 0; i < edit1.size(); i++) {
+	            for (int i = 0; i < (int)edit1.size(); i++) {
 	                map<string, int>::iterator itr = nWords.find(edit1[i]);
 	                if (itr != nWords.end()) {
 	                    pair<string, int> myPair = *itr;
@@ -303,9 +303,9 @@ public:
 	                return max.second;
 	            }
 	            candidates.clear();
-	            for (int i = 0; i < edit1.size(); i++) {
+	            for (int i = 0; i < (int)edit1.size(); i++) {
 	                vector<string> edit2 = edits(edit1[i]);
-	                for (int i = 0; i < edit2.size(); i++) {
+	                for (int i = 0; i < (int)edit2.size(); i++) {
 	                    map<string, int>::iterator itr = nWords.find(edit2[i]);
 	                    if (itr != nWords.end()) {
 	                        pair<string, int> myPair = *itr;
@@ -328,21 +328,21 @@ public:
 	        vector<string> edits(string word) {
 	            vector<string> result;
 	            string temp;
-	            for (int i = 0; i < word.length(); i++) {
+	            for (int i = 0; i < (int)word.length(); i++) {
 	                temp = word.substr(0, i) + word.substr(i+1);
 	                result.push_back(temp);
 	            }
-	            for (int i = 0; i < word.length() - 1; i++) {
+	            for (int i = 0; i < (int)word.length() - 1; i++) {
 	                temp = word.substr(0, i) + word[i+1] + word[i] + word.substr(i+2);
 	                result.push_back(temp);
 	            }
-	            for (int i = 0; i < word.length(); i++) {
+	            for (int i = 0; i < (int)word.length(); i++) {
 	                for (char c = 'a'; c <= 'z'; c++) {
 	                    temp = word.substr(0, i) + c + word.substr(i+1);
 	                    result.push_back(temp);
 	                }
 	            }
-	            for (int i = 0; i < word.length() + 1; i++) {
+	            for (int i = 0; i < (int)word.length() + 1; i++) {
 	                for (char c = 'a'; c <= 'z'; c++) {
 	                    temp = word.substr(0, i) + c + word.substr(i);
 	                    result.push_back(temp);
@@ -355,7 +355,7 @@ public:
 	            while (true) {
 	                int pos = sentence.find(" ");
 
-	                if (pos != string::npos) {
+	                if (pos != (int)string::npos) {
 	                    word = sentence.substr(0, pos);
 
 	                    sentence = sentence.substr(pos);
@@ -363,7 +363,7 @@ public:
 	                        sentence = sentence.substr(1);
 	                    }
 	                    bool isWord = true;
-	                    for (int i = 0; i < word.length(); i++) {
+	                    for (int i = 0; i < (int)word.length(); i++) {
 	                        if (isalpha(word[i])) {
 	                            word[i] = tolower(word[i]);
 	                        } else if (ispunct(word[i])) {
@@ -378,7 +378,7 @@ public:
 	                    word = sentence;
 	                    sentence = "";
 	                    bool isWord = true;
-	                    for (int i = 0; i < word.length(); i++) {
+	                    for (int i = 0; i < (int)word.length(); i++) {
 	                        if (isalpha(word[i])) word[i] = tolower(word[i]);
 	                        else isWord = false;
 	                    }
@@ -707,7 +707,7 @@ void switching(char *argv[])
 		}
 
 
-		for(int i=0;i<list_user.size();i++)
+		for(int i=0;i<(int)list_user.size();i++)
 		{
 			mvwprintw(usersBox,i+1,1, list_user[i].c_str());
 			wrefresh(usersBox);
@@ -770,7 +770,7 @@ void switching(char *argv[])
 
 			string line2;
 
-			for(i=0;i<tokens.size();i++)
+			for(i=0;i<(int)tokens.size();i++)
 			{
 
 				line2 = line2 + " " + checker.correct(tokens[i]);
@@ -1000,7 +1000,7 @@ int main(int argc, char* argv[])
 			}
 
 
-			for(int i=0;i<list_user.size();i++)
+			for(int i=0;i< (int)list_user.size();i++)
 			{
 				mvwprintw(usersBox,i+1,1, list_user[i].c_str());
 				wrefresh(usersBox);
@@ -1063,7 +1063,7 @@ int main(int argc, char* argv[])
 
 			string line2;
 
-			for(i=0;i<tokens.size();i++)
+			for(i=0;i<(int)tokens.size();i++)
 			{
 
 				line2 = line2 + " " + checker.correct(tokens[i]);
