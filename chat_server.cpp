@@ -244,7 +244,7 @@ int main(int argc, char* argv[])
 
     std::fstream myfile;
 
-    myfile.open("-.superchat", std::fstream::out);
+    myfile.open("~.superchat", std::fstream::out);
 
 
     std::vector <int> ports;
@@ -265,14 +265,15 @@ int main(int argc, char* argv[])
 
 
     myfile.close();
+      printw("\nThis is the SERVER.\n");
 
     for (int i = 0; i < ports.size(); ++i)
     {
       tcp::endpoint endpoint(tcp::v4(), ports[i]);
       servers.emplace_back(io_context, endpoint);
-	  printw("\nThis is the SERVER.\n");
+
     std::string use_port_string = std::to_string(ports[i]);
-    printw(use_port_string.c_str());
+    //printw(use_port_string.c_str());
 	  //don't take in an input here. might cause disturbances
 	  refresh();
     }

@@ -28,6 +28,7 @@
 WINDOW* roomBox;
 WINDOW* displayBox;
 WINDOW* msgBox;
+WINDOW* usersBox;
 
 
 
@@ -62,7 +63,7 @@ std::vector <ports_use> ports;
 int y,x;
 int height = 40;
 int width = 90;
-int room_height, room_width, room_y, room_x;
+int room_height, room_width, room_y, room_x,room_y2, room_x2;
 int display_height, display_width, display_y, display_x;
 int msg_height, msg_width, msg_y, msg_x;
 
@@ -72,8 +73,9 @@ void input_position(WINDOW* local_win, int tl, int bl, int& y, int& x)
 	x = 3;
 	++y;
 
-	if(y >= bl){
+	if(y > bl){
 		wclear(local_win);
+		box(local_win,0,0);
 		y = tl + 1;
 	}
 }
@@ -393,6 +395,9 @@ public:
 
 
 
+
+
+
   void login()
 	{
 
@@ -674,12 +679,41 @@ void switching(char *argv[])
 		roomBox = create_newwin(room_height, room_width, room_y, room_x);
 		displayBox = create_newwin(display_height, display_width, display_y, display_x);
 		msgBox = create_newwin(msg_height, msg_width, msg_y, msg_x);
+		usersBox = create_newwin(room_height, room_width, room_y2, room_x2);
 		refresh();
 
 		box(roomBox, 0,0);
 		mvwprintw(roomBox,1,1, menu_choice.c_str());
 
 		wrefresh(roomBox);
+
+		box(usersBox,0,0);
+		wrefresh(usersBox);
+		fstream userprint;
+		userprint.open("userlist.txt",ios::out);
+		userprint << user_name_chat << "\n";
+
+		userprint.close();
+
+		vector <string> list_user;
+
+		//fstream userprget;
+		userprint.open("userlist.txt",ios::in);
+		string temporary;
+
+		while (!(userprint.eof())) {
+			userprint >> temporary;
+			list_user.push_back(temporary);
+		}
+
+
+		for(int i=0;i<list_user.size();i++)
+		{
+			mvwprintw(usersBox,i+1,1, list_user[i].c_str());
+			wrefresh(usersBox);
+		}
+
+		userprint.close();
 
 		box(displayBox,0,0);
 		wrefresh(displayBox);
@@ -703,16 +737,19 @@ void switching(char *argv[])
 			wrefresh(msgBox);
 
 			wclear(msgBox);
+			box(msgBox,0,0);
 			wrefresh(msgBox);
 
 			std::string compare_string = line;
 
-			if(compare_string.compare("switch") == 0 )
+			if(compare_string.compare("goto") == 0 )
 			{
 
 				switching(argv);
 				//return 1;
 			}
+
+
 
 			if(compare_string.compare("exit") == 0 )
 			{
@@ -783,7 +820,50 @@ void switching(char *argv[])
 
 }
 
+void send_file(int file_port,char *argv[] , char file_name_send [])
+{
+	asio::io_context io_context;
 
+	tcp::resolver resolver(io_context);
+	 auto endpoints = resolver.resolve(argv[1], to_string(file_port).c_str());
+
+	chat_client c(io_context, endpoints);
+
+	//c.login(); // enter login procedure
+
+	fstream infile;
+	infile.open(file_name_send, ios::in);
+	string new_use;
+	chat_message msg;
+	roomBox = create_newwin(room_height, room_width, room_y, room_x);
+	displayBox = create_newwin(display_height, display_width, display_y, display_x);
+	msgBox = create_newwin(msg_height, msg_width, msg_y, msg_x);
+	refresh();
+
+
+	box(roomBox, 0,0);
+	wrefresh(roomBox);
+
+	box(displayBox,0,0);
+	wrefresh(displayBox);
+
+	box(msgBox,0,0);
+	wrefresh(msgBox);
+
+	while(!(infile.eof()))
+	{
+		infile >> new_use;
+		msg.body_length((std::strlen(new_use.c_str())));
+
+		std::memcpy(msg.body(), new_use.c_str(), msg.body_length());
+		msg.encode_header();
+
+		c.write(msg);
+	}
+
+
+
+}
 
 int main(int argc, char* argv[])
 {
@@ -793,24 +873,33 @@ int main(int argc, char* argv[])
       std::cerr << "Usage: chat_client <host> <port>\n";
       return 1;
     }
-		room_height = height - 4;
-		room_width = width / 4;
-		room_y = 3;
-		room_x = 1;
+
 
 		display_height = height - height/4 -5;
 		display_width = width - width/4 -5;
 		display_y = 3;
 		display_x = width/4 + 5;
 
+
+
+
+
 		msg_height = height/4 -5;
 		msg_width = width - width/4 -5;
 		msg_y = height - height/4 - 5;
 		msg_x = width/4 + 5;
 
+		room_height = msg_height + display_height;
+		room_width = width / 4;
+		room_y = 3;
+		room_x = 1;
+
+		room_y2 = 3;
+		room_x2 = width +3 ;
+
 		std::fstream myfile;
 
-		myfile.open("-.superchat", std::fstream::in);
+		myfile.open("~.superchat", std::fstream::in);
 		std::string temp_file_string;
 
 		std::string buffer2;                 // Have a buffer string
@@ -839,19 +928,8 @@ int main(int argc, char* argv[])
 			ports.push_back(temp);
 
 		}
-
-		std::fstream newfile;
-		newfile.open("new.txt", std::ios::out);
-
-		for(int i =0;i<ports.size();i++)
-		{
-			newfile << ports[i].port_number << " " << ports[i].groupName << "\n";
-		}
-
-
-
 		myfile.close();
-		newfile.close();
+
 
 
 
@@ -878,17 +956,23 @@ int main(int argc, char* argv[])
 		roomBox = create_newwin(room_height, room_width, room_y, room_x);
 		displayBox = create_newwin(display_height, display_width, display_y, display_x);
 		msgBox = create_newwin(msg_height, msg_width, msg_y, msg_x);
+		usersBox = create_newwin(room_height, room_width, room_y2, room_x2);
+
 		refresh();
 
 
 		box(roomBox, 0,0);
 		mvwprintw(roomBox,1,1, "Lobby");
-
+		mvwprintw(roomBox,2,1, "Type 'goto' to ");
+		mvwprintw(roomBox,3,1, "change group");
 
 		wrefresh(roomBox);
 
 		box(displayBox,0,0);
 		wrefresh(displayBox);
+
+		box(usersBox,0,0);
+		wrefresh(usersBox);
 
 		box(msgBox,0,0);
 		wrefresh(msgBox);
@@ -896,6 +980,36 @@ int main(int argc, char* argv[])
 			std::thread t([&io_context](){ io_context.run(); });
 
 			char line[chat_message::max_body_length + 1];
+			box(usersBox,0,0);
+			wrefresh(usersBox);
+			fstream userprint;
+			userprint.open("userlist.txt",ios::out);
+			userprint << user_name_chat << "\n";
+
+			userprint.close();
+
+			vector <string> list_user;
+
+			//fstream userprget;
+			userprint.open("userlist.txt",ios::in);
+			string temporary;
+
+			while (!(userprint.eof())) {
+				userprint >> temporary;
+				list_user.push_back(temporary);
+			}
+
+
+			for(int i=0;i<list_user.size();i++)
+			{
+				mvwprintw(usersBox,i+1,1, list_user[i].c_str());
+				wrefresh(usersBox);
+			}
+
+			userprint.close();
+
+
+
 
 			while (1)
 			{
@@ -909,18 +1023,31 @@ int main(int argc, char* argv[])
 			wrefresh(msgBox);
 
 			wclear(msgBox);
+			box(msgBox,0,0);
 			wrefresh(msgBox);
 
 			std::string compare_string = line;
 
-			if(compare_string.compare("switch") == 0 )
+			if(compare_string.compare("goto") == 0 )
 			{
-
-
 						switching(argv);
 						//c.close();
 
 						return 0;
+			}
+			//char filename_send[chat_message::max_body_length + 1];
+
+			if(compare_string.compare("sendfile") == 0 )
+			{
+				/*
+				wmove(msgBox,2,3);
+				wrefresh(msgBox);
+				wgetnstr(msgBox,filename_send, chat_message::max_body_length + 1);
+				wrefresh(msgBox);
+
+				send_file(2000 , argv ,filename_send);
+				//return 1;
+				*/
 			}
 
 			std::string buf;                 // Have a buffer string
@@ -959,6 +1086,7 @@ int main(int argc, char* argv[])
 			strftime(s, 1000, "{%D,%r} ", p);
 
 			std::string new_use = s  + user+ line2;
+
 
 			msg.body_length((std::strlen(new_use.c_str())));
 
